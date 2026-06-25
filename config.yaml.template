@@ -1,0 +1,78 @@
+# ============================================================
+# YouTube 자동 요약 시스템 설정 템플릿
+# ============================================================
+# 이 파일을 config.yaml로 복사한 후 실제 값을 입력하세요.
+# cp config.yaml.template config.yaml
+# ============================================================
+
+# API 키 설정 (실제 키로 교체 필요)
+api_keys:
+  claude: "YOUR_CLAUDE_API_KEY"        # https://console.anthropic.com/
+  youtube: "YOUR_YOUTUBE_DATA_API_KEY" # https://console.cloud.google.com/
+  notion: "YOUR_NOTION_API_KEY"        # https://developers.notion.com/
+
+# Notion 설정
+notion:
+  database_id: "YOUR_NOTION_DATABASE_ID"
+
+# 저장 경로 (자신의 환경에 맞게 수정)
+paths:
+  obsidian_vault: "C:\\Users\\YOUR_USERNAME\\Documents\\Obsidian Vault"
+  youtube_summary_folder: "P_개인\\50_유튜브요약"
+  processed_videos_db: "C:\\Users\\YOUR_USERNAME\\.claude\\scripts\\youtube-summarizer\\processed_videos.json"
+  log_folder: "C:\\Users\\YOUR_USERNAME\\.claude\\logs"
+
+# 채널 목록 (원하는 채널 추가/수정)
+channels:
+  - name: "박종훈의 지식한방"
+    channel_id: ""  # python youtube_summarizer.py --setup 으로 확인
+    category: "경제/시사"
+    folder: "박종훈의-지식한방"
+    tags: ["경제", "시사", "거시경제", "정책"]
+    summary_focus: "거시경제 동향, 정책 영향, 투자 시사점"
+
+  - name: "조승연의 탐구생활"
+    channel_id: ""
+    category: "인문/교양"
+    folder: "조승연의-탐구생활"
+    tags: ["인문", "교양", "통찰", "역사"]
+    summary_focus: "핵심 통찰, 역사적 맥락, 현대적 적용"
+
+  - name: "언더스탠딩"
+    channel_id: ""
+    category: "경제/금융"
+    folder: "언더스탠딩"
+    tags: ["경제", "금융", "투자", "시장분석"]
+    summary_focus: "금융시장 분석, 투자 전략, 경제 트렌드"
+
+  - name: "미키피디아"
+    channel_id: ""
+    category: "산업/기업"
+    folder: "미키피디아"
+    tags: ["산업", "기업분석", "종목", "섹터"]
+    summary_focus: "기업 분석, 산업 동향, 종목 투자 포인트"
+
+  - name: "월가아재의 과학적투자"
+    channel_id: ""
+    category: "투자/퀀트"
+    folder: "월가아재"
+    tags: ["투자", "퀀트", "데이터", "전략"]
+    summary_focus: "데이터 기반 투자, 퀀트 전략, 리스크 관리"
+
+# 요약 설정
+summary:
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 4000
+
+# 체크 주기 (분)
+check_interval_minutes: 30
+
+# 카테고리별 이모지
+category_emoji:
+  "경제/시사": "📊"
+  "경제/금융": "💰"
+  "투자/퀀트": "💹"
+  "산업/기업": "🏭"
+  "인문/교양": "📚"
+  "기술/개발": "💻"
+  "영어학습": "🔤"
