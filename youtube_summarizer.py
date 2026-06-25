@@ -15,6 +15,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, List, Any
 
+# Windows 콘솔 UTF-8 인코딩 강제
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 import feedparser
 import requests
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -32,9 +37,26 @@ CONFIG_PATH = SCRIPT_DIR / "config.yaml"
 PROCESSED_DB_PATH = SCRIPT_DIR / "processed_videos.json"
 
 def load_config() -> dict:
-    """설정 파일 로드"""
+    """설정 파일 로드 (환경 변수 우선)"""
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+
+    # 환경 변수로 API 키 오버라이드 (보안 강화)
+    env_mappings = {
+        "ANTHROPIC_API_KEY": ("api_keys", "claude"),
+        "YOUTUBE_API_KEY": ("api_keys", "youtube"),
+        "NOTION_API_KEY": ("api_keys", "notion"),
+        "NOTION_DATABASE_ID": ("notion", "database_id"),
+    }
+
+    for env_var, (section, key) in env_mappings.items():
+        env_value = os.environ.get(env_var)
+        if env_value:
+            if section not in config:
+                config[section] = {}
+            config[section][key] = env_value
+
+    return config
 
 CONFIG = load_config()
 
@@ -157,36 +179,53 @@ def get_latest_videos_api(channel_id: str, api_key: str, max_results: int = 5) -
 # 자막 추출
 # ============================================================
 
-def get_transcript(video_id: str) -> Optional[str]:
-    """영상 자막 추출"""
+def get_transcript(video_id: str) -> Optional[dict]:
+    """영상 자막 추출 (youtube-transcript-api v1.x)"""
     try:
-        # 한국어 자막 우선, 없으면 영어
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        # API 인스턴스 생성
+        api = YouTubeTranscriptApi()
 
-        # 한국어 자막 시도
-        try:
-            transcript = transcript_list.find_transcript(['ko'])
-        except:
-            # 영어 자막 시도
-            try:
-                transcript = transcript_list.find_transcript(['en'])
-            except:
-                # 자동 생성 자막
-                transcript = transcript_list.find_generated_transcript(['ko', 'en'])
+        # 사용 가능한 자막 목록 조회
+        transcript_list = api.list(video_id)
 
-        transcript_data = transcript.fetch()
+        # 한국어 자막 우선 탐색
+        selected_transcript = None
+        for transcript in transcript_list:
+            if transcript.language_code == 'ko':
+                selected_transcript = transcript
+                break
+
+        # 한국어 없으면 영어
+        if not selected_transcript:
+            for transcript in transcript_list:
+                if transcript.language_code == 'en':
+                    selected_transcript = transcript
+                    break
+
+        # 둘 다 없으면 첫 번째 사용 가능한 자막
+        if not selected_transcript:
+            for transcript in transcript_list:
+                selected_transcript = transcript
+                break
+
+        if not selected_transcript:
+            logger.warning(f"자막 없음: {video_id}")
+            return None
+
+        # 자막 데이터 가져오기
+        transcript_data = selected_transcript.fetch()
 
         # 타임스탬프와 텍스트 결합
         full_text = []
         timestamped_text = []
 
         for entry in transcript_data:
-            start_time = int(entry['start'])
+            start_time = int(entry.start)
             minutes = start_time // 60
             seconds = start_time % 60
             timestamp = f"{minutes:02d}:{seconds:02d}"
 
-            text = entry['text'].strip()
+            text = entry.text.strip()
             full_text.append(text)
             timestamped_text.append(f"[{timestamp}] {text}")
 
