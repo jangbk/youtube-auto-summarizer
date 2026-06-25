@@ -346,10 +346,14 @@ def save_to_obsidian(
 
     vault_path = Path(CONFIG["paths"]["obsidian_vault"])
     summary_folder = CONFIG["paths"]["youtube_summary_folder"]
+
+    # 카테고리 폴더 (슬래시를 하이픈으로 변경)
+    category = channel_config.get("category", "일반")
+    category_folder = category.replace("/", "-")
     channel_folder = channel_config["folder"]
 
-    # 폴더 경로
-    folder_path = vault_path / summary_folder / channel_folder
+    # 폴더 경로: 유튜브요약/카테고리/채널명/
+    folder_path = vault_path / summary_folder / category_folder / channel_folder
     folder_path.mkdir(parents=True, exist_ok=True)
 
     # 파일명 생성 (날짜-제목)
